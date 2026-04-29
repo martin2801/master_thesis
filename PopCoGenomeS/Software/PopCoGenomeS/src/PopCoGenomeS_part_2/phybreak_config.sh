@@ -1,0 +1,9 @@
+output_dir='/home/senekowitsch/Thesis/PopCoGenomeS/output_alt_outgroups_rerun'  #this is the folder where you want your outputs to be 
+project_dir_1='/data/Unit_LMM/selberherr-group/senekowitsch/Thesis/PopCoGenomeS/temp_4'	#where is your project workspace
+basename='salmonella_outgroups_rerun'   #this should be the same as the previous basename in the first part of PopCoGenomeS
+genome_source='/home/senekowitsch/Thesis/PopCoGenomeS/00_data_alt_outgroups' #the folder where your genomes are in
+genome_ext='.fna' #can be .fna.gz, .fna, .fasta, .fasta.gz
+pop_infile_source='/home/senekowitsch/Thesis/PopCoGenomeS/output_alt_outgroups_rerun'  #where are your genome lists for each vertically-inherited cluster identified in Part 1
+path_to_phybreak='/home/senekowitsch/Thesis/PopCoGenomeS/Software/PopCoGenomeS/src/PopCoGenomeS_part_2' #where is your align_and_construct_trees folder
+path_to_PopCoGenomeS='popcogenomes' #path to your conda environment PopCoGenomeS
+path_to_PopCoGenomeS_R='popcogenomes_r' #path to your conda environment for PopCoGenomeS_R
