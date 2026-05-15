@@ -32,6 +32,7 @@ if ! conda env list | grep -q "phylo_pipeline"; then
     conda install -c conda-forge -c bioconda snp-sites -y
     conda install -c conda-forge -c bioconda snp-dists -y
     conda install -c conda-forge -c bioconda bedtools -y
+    conda install -c conda-forge -c bioconda scikit-learn -y
     # Verify installs
     iqtree --version
     treetime --version

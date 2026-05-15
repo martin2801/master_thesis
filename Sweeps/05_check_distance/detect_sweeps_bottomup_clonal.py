@@ -281,6 +281,30 @@ for clade in reversed(all_clades):
     if sister_tip is None:
         continue  # no valid SNP distances to any sister tip
 
+    # --- Sister merging step ---
+    # If the closest sister tip has a mean SNP distance of 0 to the clade,
+    # it is identical to the clade members. This is a tree resolution artefact:
+    # with zero genetic distance there is no phylogenetic signal to place the
+    # genome inside or outside the clade, so its placement is arbitrary.
+    # We resolve this by merging the sister tip into the clade and climbing
+    # one level up the tree to find the next distinct sister. We keep climbing
+    # as long as the new sister tip is also at distance 0, stopping when we
+    # find a genuinely distinct outside genome or reach the root.
+    merged_tips = list(tips)
+    current_clade = clade
+    while sister_mean == 0:
+        merged_tips.append(sister_tip)                     # absorb the identical sister into the clade
+        current_clade = parent.get(id(current_clade))     # climb one level up
+        if current_clade is None:
+            break                                          # reached the root, no further sister exists
+        new_sister = get_sister(current_clade)
+        if new_sister is None:
+            break                                          # no sister at this level either
+        sister_tip, sister_mean = get_closest_sister_tip(merged_tips, new_sister)
+        if sister_tip is None:
+            break                                          # no valid distances to any tip in the new sister
+    tips = merged_tips                                     # use the expanded tip list going forward
+
     # itertools.combinations generates all unique pairs without repetition
     # e.g. for [A, B, C]: (A,B), (A,C), (B,C) — no (A,A) or (B,A) duplicates
     within_vals = [get_snp(a, b) for a, b in itertools.combinations(tips, 2) if a != b]
