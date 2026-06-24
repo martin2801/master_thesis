@@ -98,6 +98,9 @@ python3 plot_tree.py --tree "${treefile}" --sweeps "${output_base}/sweeps_bottom
 python3 plot_tree.py --tree "${treefile}" --sweeps "${output_base}/sweeps_bottomup_clonal_3x.txt" --out "${output_base}/tree_sweeps_bottomup_clonal_3x.png" --labels
 python3 plot_tree.py --tree "${treefile}" --sweeps "${output_base}/sweeps_bottomup_clonal_4x.txt" --out "${output_base}/tree_sweeps_bottomup_clonal_4x.png" --labels
 python3 plot_tree.py --tree "${treefile}" --sweeps "${output_base}/sweeps_bottomup_clonal_5x.txt" --out "${output_base}/tree_sweeps_bottomup_clonal_5x.png" --labels
+python3 plot_tree_pres.py --tree "${treefile}" --sweeps "${output_base}/sweeps_bottomup_clonal_5x.txt" --out "${output_base}/tree_sweeps_bottomup_clonal_5x_pres.png" --labels --dpi 400
+python3 plot_tree_with7.py --tree "${treefile}" --sweeps "${output_base}/sweeps_bottomup_clonal_5x.txt" --out "${output_base}/tree_sweeps_bottomup_clonal_5x_pres_with7.png" --labels --dpi 400
+
 
 python3 detect_sweeps.py --tree "${treefile}" --snps "${SNP_LIST}" --threshold 5 --min-tips 3 --out "${output_base}/sweeps.txt"
 python3 plot_tree.py --tree "${treefile}" --sweeps "${output_base}/sweeps.txt" --out "${output_base}/tree_sweeps.png" --labels

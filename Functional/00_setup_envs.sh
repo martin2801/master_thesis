@@ -30,3 +30,33 @@ if ! conda env list | grep -q "blast"; then
 else
     echo "blast environment already exists."
 fi
+
+# Create a new environment for pESI if not exists
+if ! conda env list | grep -q "pESI"; then
+    conda create -n pESI -y
+    conda activate pESI
+    conda install -c bioconda mob_suite -y
+    conda install -c conda-forge -c bioconda abricate -y
+    conda install -c conda-forge -c bioconda efetch -y
+    mob_recon --version
+    abricate --version
+    efetch --help
+    conda install -c bioconda mlst -y
+    mlst --help
+else
+    echo "pESI environment already exists."
+fi
+
+# Create a new environment for pMLST if not exists
+if ! conda env list | grep -q "pmlst"; then
+    conda create -y -n pmlst
+    conda activate pmlst
+    conda install -c conda-forge -c bioconda pmlst_ssi -y
+    pmlst --help
+else
+    echo "pmlst environment already exists."
+fi
+
+# Remove conda environments if needed
+conda deactivate
+conda env remove -n pmlst

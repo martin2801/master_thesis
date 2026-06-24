@@ -1,16 +1,19 @@
 .libPaths("~/R/library")
 
+
+#install.packages("patchwork", lib="~/R/library", repos="https://cloud.r-project.org/")
+#remotes::install_version("GlobalOptions", version="0.1.2", lib="~/R/library", repos="https://cloud.r-project.org/")
+#BiocManager::install("ComplexHeatmap", lib="~/R/library")
+
 library(dplyr)
 library(tidyr)
 library(data.table)
 library(GO.db)
 library(ggplot2)
+library(ggrepel)
 library(ComplexHeatmap)
-
-install.packages("remotes", lib="~/R/library", repos="https://cloud.r-project.org/")
 library(remotes)
-remotes::install_version("GlobalOptions", version="0.1.2", lib="~/R/library", repos="https://cloud.r-project.org/")
-BiocManager::install("ComplexHeatmap", lib="~/R/library")
+library(patchwork)
 
 #set working directory
 setwd("/home/senekowitsch/Thesis/Functional/05_analyze_BLAST")
@@ -115,18 +118,18 @@ pa_matrix[1:5, 1:5]
 
 # how many genes are present in all 472 genomes (universal genes)
 universal <- pa_matrix %>%
-  filter(rowSums(select(., -Preferred_name)) == 472) %>%
+  filter(rowSums(dplyr::select(., -Preferred_name)) == 472) %>%
   pull(Preferred_name)
 cat("Universal genes (in all 472 genomes):", length(universal), "\n")
 
 # how many genes are present in only 1 genome (unique genes)
 unique_genes <- pa_matrix %>%
-  filter(rowSums(select(., -Preferred_name)) == 1) %>%
+  filter(rowSums(dplyr::select(., -Preferred_name)) == 1) %>%
   pull(Preferred_name)
 cat("Genes in only 1 genome:", length(unique_genes), "\n")
 
 # distribution of how many genomes each gene is found in
-presence_counts <- rowSums(select(pa_matrix, -Preferred_name))
+presence_counts <- rowSums(dplyr::select(pa_matrix, -Preferred_name))
 hist(presence_counts, breaks = 50, 
      main = "Gene presence across 472 genomes",
      xlab = "Number of genomes", ylab = "Number of genes")
@@ -160,16 +163,16 @@ sweep_7_genomes  <- get_genomes("sweep_7")
 # calculate frequency per group
 gene_freq <- pa_matrix %>%
   mutate(
-    no_sweep_freq = rowSums(select(., all_of(no_sweep_genomes)))  / 242,
-    sweep_1_freq  = rowSums(select(., all_of(sweep_1_genomes)))   / 3,
-    sweep_2_freq  = rowSums(select(., all_of(sweep_2_genomes)))   / 4,
-    sweep_3_freq  = rowSums(select(., all_of(sweep_3_genomes)))   / 7,
-    sweep_4_freq  = rowSums(select(., all_of(sweep_4_genomes)))   / 4,
-    sweep_5_freq  = rowSums(select(., all_of(sweep_5_genomes)))   / 3,
-    sweep_6_freq  = rowSums(select(., all_of(sweep_6_genomes)))   / 3,
-    sweep_7_freq  = rowSums(select(., all_of(sweep_7_genomes)))   / 206
+    no_sweep_freq = rowSums(dplyr::select(., all_of(no_sweep_genomes)))  / 242,
+    sweep_1_freq  = rowSums(dplyr::select(., all_of(sweep_1_genomes)))   / 3,
+    sweep_2_freq  = rowSums(dplyr::select(., all_of(sweep_2_genomes)))   / 4,
+    sweep_3_freq  = rowSums(dplyr::select(., all_of(sweep_3_genomes)))   / 7,
+    sweep_4_freq  = rowSums(dplyr::select(., all_of(sweep_4_genomes)))   / 4,
+    sweep_5_freq  = rowSums(dplyr::select(., all_of(sweep_5_genomes)))   / 3,
+    sweep_6_freq  = rowSums(dplyr::select(., all_of(sweep_6_genomes)))   / 3,
+    sweep_7_freq  = rowSums(dplyr::select(., all_of(sweep_7_genomes)))   / 206
   ) %>%
-  select(Preferred_name, ends_with("_freq"))
+  dplyr::select(Preferred_name, ends_with("_freq"))
 
 head(gene_freq)
 
@@ -266,7 +269,7 @@ enriched <- enriched %>%
     freq_in_group   = present_in_group / n_in_group,
     freq_out_group  = present_other / (472 - n_in_group)
   ) %>%
-  select(Preferred_name, group, odds_ratio, freq_in_group, freq_out_group, 
+  dplyr::select(Preferred_name, group, odds_ratio, freq_in_group, freq_out_group, 
          n_in_group, present_in_group, present_other, p_adjusted) %>%
   arrange(desc(odds_ratio))
 
@@ -275,7 +278,7 @@ depleted <- depleted %>%
     freq_in_group  = present_in_group / n_in_group,
     freq_out_group = present_other / (472 - n_in_group)
   ) %>%
-  select(Preferred_name, group, odds_ratio, freq_in_group, freq_out_group,
+  dplyr::select(Preferred_name, group, odds_ratio, freq_in_group, freq_out_group,
          n_in_group, present_in_group, present_other, p_adjusted) %>%
   arrange(odds_ratio)
 
@@ -364,6 +367,9 @@ wilcox_results <- bind_rows(lapply(sweep_groups, function(grp) {
       group        = grp,
       median_sweep = median(in_group),
       median_other = median(out_group),
+      mean_sweep  = mean(in_group),
+      mean_other  = mean(out_group),
+      perc_diff = (median(in_group) - median(out_group)) / median(out_group) * 100,
       p_value      = wt$p.value
     )
   }))
@@ -593,43 +599,77 @@ go_depleted <- go_depleted %>% left_join(go_terms, by = c("GO" = "GOID"))
 write.table(go_enriched, "enriched_go.tsv", sep = "\t", row.names = FALSE, quote = FALSE)
 write.table(go_depleted, "depleted_go.tsv", sep = "\t", row.names = FALSE, quote = FALSE)
 
+# --------------------------------------------------------------------------------------------------
+# -------------------------------------------------
+# Plotting results
+# -------------------------------------------------
+setwd("/home/senekowitsch/Thesis/Functional/05_analyze_BLAST")
 
+# --------------------------------------------------------------------------------------------------
+# Heatmap, use all genes from  filtered gene frequency table
+# These are the genes that survived your >90% universal filter
+all_accessory_genes <- gene_freq$Preferred_name
 
+# 2. Prepare the matrix using all accessory genes
+mat_all <- pa_matrix %>% 
+  filter(Preferred_name %in% all_accessory_genes) %>% 
+  tibble::column_to_rownames("Preferred_name") %>%
+  as.matrix()
 
-# Assuming grp_name is the sweep you want to highlight (e.g., "sweep_7")
-plot_data <- fisher_results %>% 
-  filter(group == "sweep_7") %>%
-  mutate(log10p = -log10(p_adjusted),
-         log2OR = log2(as.numeric(odds_ratio) + 0.01), # Add small constant to avoid log(0)
-         significance = ifelse(p_adjusted < 0.05 & abs(log2OR) > 2, "Significant", "Not Significant"))
+# 3. Ensure the column (genome) order matches your annotation
+# We use the full sweep_labels here
+anno_df_all <- sweep_labels %>% 
+  filter(genome %in% colnames(mat_all)) %>% 
+  arrange(sweep)
 
-ggplot(plot_data, aes(x = log2OR, y = log10p, color = significance)) +
-  geom_point(alpha = 0.6) +
-  theme_minimal() +
-  scale_color_manual(values = c("gray", "red")) +
-  geom_hline(yintercept = -log10(0.05), linetype = "dashed") +
-  labs(title = "Volcano Plot: Sweep 7 vs. Others",
-       x = "Log2 Odds Ratio (Enrichment)",
-       y = "-Log10 Adjusted P-value")
+mat_all <- mat_all[, anno_df_all$genome]
 
+# 4. Create the annotation with the full color palette
+sweep_colors <- c(
+  "sweep_1"  = "#E41A1C", "sweep_2"  = "#377EB8", 
+  "sweep_3"  = "#4DAF4A", "sweep_4"  = "#984EA3", 
+  "sweep_5"  = "#FF7F00", "sweep_6"  = "#FFFF33", 
+  "sweep_7"  = "#A65628", "no_sweep" = "#999999"
+)
 
-# Choose a significant COG category from your sig_cog results
-target_cog <- "A" 
+col_anno_all <- HeatmapAnnotation(
+  Sweep = anno_df_all$sweep, 
+  col = list(Sweep = sweep_colors)
+)
 
-ggplot(cog_counts_complete %>% filter(COG_split == target_cog), 
-       aes(x = sweep, y = count, fill = sweep)) +
-  geom_boxplot(outlier.shape = NA) +
-  geom_jitter(width = 0.2, alpha = 0.3) +
-  theme_classic() +
-  labs(title = paste("Unique Genes in COG Category", target_cog),
-       subtitle = "Defense Mechanisms across Sweeps",
-       x = "Sweep Group", y = "Gene Count per Genome") +
-  theme(axis.text.x = element_text(angle = 45, hjust = 1))
+draw(Heatmap(mat_all, 
+             name = "Presence", 
+             col = c("0" = "white", "1" = "black"),
+             top_annotation = col_anno_all,
+             show_column_names = FALSE,  # Too many genomes (472) to show names
+             cluster_columns = FALSE, 
+             cluster_rows = TRUE,        # This will group genes with similar P/A patterns
+             show_row_names = FALSE,     # Hide names if there are >1000 genes to avoid overlap
+             row_title = paste(nrow(mat_all), "Accessory Genes"),
+             column_title = "Complete Accessory Pangenome Signatures in S. Infantis"))
 
+# 5. Save the large Heatmap to PDF
+# Note: Increased height to 20 inches to give rows more room to breathe
+pdf("Sweeps_All_Genes_Heatmap.pdf", width = 12, height = 20)
 
-# Heatmap of presence/absence of top enriched genes across genomes, grouped by ALL sweep
+draw(Heatmap(mat_all, 
+             name = "Presence", 
+             col = c("0" = "white", "1" = "black"),
+             top_annotation = col_anno_all,
+             show_column_names = FALSE,  # Too many genomes (472) to show names
+             cluster_columns = FALSE, 
+             cluster_rows = TRUE,        # This will group genes with similar P/A patterns
+             show_row_names = FALSE,     # Hide names if there are >1000 genes to avoid overlap
+             row_title = paste(nrow(mat_all), "Accessory Genes"),
+             column_title = "Complete Accessory Pangenome Signatures in S. Infantis"))
+
+dev.off()
+
+# --------------------------------------------------------------------------------------------------
+# Heatmap of presence/absence of top enriched genes across genomes, grouped by ALL sweeps
 # 1. Select the top 100 genes most enriched in ANY sweep 
 # this will be basically all genes that are enriched in at least one sweep from the fishers test before
+# and then look for those genes in the genomes, check if present and plot
 top_genes <- enriched %>% group_by(group) %>% slice_max(odds_ratio, n = 100) %>% pull(Preferred_name) %>% unique()
 
 # 2. Prepare the matrix (Genes as rows, Genomes as columns)
@@ -671,20 +711,75 @@ Heatmap(mat,
         column_title = "Sweep-Specific Gene Signatures in S. Infantis")
 
 pdf("Sweeps_all_Heatmap.pdf", width = 10, height = 8)
-draw(Heatmap(mat_subset, 
-             name = "Presence", 
-             col = c("0" = "white", "1" = "black"),
-             top_annotation = col_anno_subset,
-             show_column_names = TRUE, 
-             cluster_columns = FALSE, 
-             cluster_rows = TRUE,
-             row_names_gp = gpar(fontsize = 8),
-             column_title = "Gene Signatures Specific to Sweeps 1-6"))
+draw(Heatmap(mat, 
+      name = "Presence", 
+      col = c("0" = "white", "1" = "black"),
+      top_annotation = col_anno,
+      show_column_names = FALSE, 
+      cluster_columns = FALSE, 
+      row_names_gp = gpar(fontsize = 8),
+      column_title = "Sweep-Specific Gene Signatures in S. Infantis")
+)
 dev.off()
 
+# --------------------------------------------------------------------------------------------------
+# Heatmap of presence/absence of top enriched genes across genomes, grouped by ALL sweep
+# 1. Select the top 10 genes most enriched in ANY sweep 
+# this will select top genes that are enriched in at least one sweep from the fishers test before
+# and use this list to plot the heatmap
+top_genes_sub <- enriched %>% group_by(group) %>% slice_max(odds_ratio, n = 10) %>% pull(Preferred_name) %>% unique()
 
+# 2. Prepare the matrix (Genes as rows, Genomes as columns)
+mat <- pa_matrix %>% filter(Preferred_name %in% top_genes_sub) %>% tibble::column_to_rownames("Preferred_name")
+mat <- as.matrix(mat)
 
+# 3. Prepare column annotations (the sweep labels)
+anno_df <- sweep_labels %>% filter(genome %in% colnames(mat)) %>% arrange(sweep)
+mat <- mat[, anno_df$genome] # Sort matrix columns to match annotation
+col_anno <- HeatmapAnnotation(Sweep = anno_df$sweep, 
+                               col = list(Sweep = c("sweep_1" = "red", "sweep_7" = "blue", "no_sweep" = "gray")))
 
+# Define a full color palette for all your groups
+sweep_colors <- c(
+  "sweep_1"  = "#E41A1C", 
+  "sweep_2"  = "#377EB8", 
+  "sweep_3"  = "#4DAF4A", 
+  "sweep_4"  = "#984EA3", 
+  "sweep_5"  = "#FF7F00", 
+  "sweep_6"  = "#FFFF33", 
+  "sweep_7"  = "#A65628", 
+  "no_sweep" = "#999999"
+)
+
+# Update the annotation with the full list
+col_anno <- HeatmapAnnotation(
+  Sweep = anno_df$sweep, 
+  col = list(Sweep = sweep_colors)
+)
+
+# Now run the Heatmap command
+Heatmap(mat, 
+        name = "Presence", 
+        col = c("0" = "white", "1" = "black"),
+        top_annotation = col_anno,
+        show_column_names = FALSE, 
+        cluster_columns = FALSE, 
+        row_names_gp = gpar(fontsize = 8),
+        column_title = "Sweep-Specific Gene Signatures in S. Infantis")
+
+pdf("Sweeps_top10_Heatmap.pdf", width = 10, height = 8)
+draw(Heatmap(mat, 
+      name = "Presence", 
+      col = c("0" = "white", "1" = "black"),
+      top_annotation = col_anno,
+      show_column_names = FALSE, 
+      cluster_columns = FALSE, 
+      row_names_gp = gpar(fontsize = 8),
+      column_title = "Sweep-Specific Gene Signatures in S. Infantis")
+)
+dev.off()
+
+# --------------------------------------------------------------------------------------------------
 # Heatmap for only sweeps 1-6, with more genes (not just top 50), but still manageable 
 # Define the target sweeps
 target_sweeps <- c("sweep_1", "sweep_2", "sweep_3", "sweep_4", "sweep_5", "sweep_6" )
@@ -735,7 +830,7 @@ Heatmap(mat_subset,
         column_title = "Gene Signatures Specific to Sweeps 1-6 (Salmonella Infantis)")
 
 # Save as PDF
-pdf("Sweeps_1-6_Heatmap.pdf", width = 10, height = 8)
+pdf("Sweeps_1-6_Heatmap.pdf", width = 10, height = 12)
 draw(Heatmap(mat_subset, 
              name = "Presence", 
              col = c("0" = "white", "1" = "black"),
@@ -746,58 +841,67 @@ draw(Heatmap(mat_subset,
              row_names_gp = gpar(fontsize = 8),
              column_title = "Gene Signatures Specific to Sweeps 1-6"))
 dev.off()
+# --------------------------------------------------------------------------------------------------
 
 
 
 
 
 
+# 1. Define the function to create a labeled volcano plot for a single group
+make_volcano <- function(grp_name, data) {
+  
+  # Filter and prepare data for this specific group
+  plot_df <- data %>% 
+    filter(group == grp_name) %>%
+    mutate(
+      log10p = -log10(p_adjusted),
+      log2OR = log2(as.numeric(odds_ratio) + 0.01),
+      significance = ifelse(p_adjusted < 0.05 & abs(log2OR) > 1, "Significant", "Not Significant")
+    )
+  
+  # Identify top 5 genes for labeling (to keep the composite plot clean)
+  top_labels <- plot_df %>%
+    filter(significance == "Significant") %>%
+    slice_max(log2OR, n = 5)
+  
+  # Build the plot
+  p <- ggplot(plot_df, aes(x = log2OR, y = log10p, color = significance)) +
+    geom_point(alpha = 0.3, size = 0.8) +
+    theme_minimal(base_size = 8) + # Smaller text for a composite plot
+    scale_color_manual(values = c("gray80", "firebrick"), guide = "none") +
+    geom_hline(yintercept = -log10(0.05), linetype = "dotted", color = "blue") +
+    geom_text_repel(
+      data = top_labels,
+      aes(label = Preferred_name),
+      size = 2,
+      box.padding = 0.3,
+      segment.size = 0.2
+    ) +
+    labs(title = grp_name, x = NULL, y = NULL)
+  
+  return(p)
+}
+x
+# 2. Get the list of all groups
+all_groups <- c("sweep_1", "sweep_2", "sweep_3", "sweep_4", 
+                "sweep_5", "sweep_6", "sweep_7", "no_sweep")
 
+# 3. Generate all plots using lapply
+plot_list <- lapply(all_groups, make_volcano, data = fisher_results)
 
-# 1. Instead of selecting the top 50, use all genes from your filtered gene frequency table
-# These are the genes that survived your >90% universal filter
-all_accessory_genes <- gene_freq$Preferred_name
+# 4. Use patchwork to concatenate them
+# wrap_plots combines the list, and we specify the layout
+composite_volcano <- wrap_plots(plot_list, ncol = 2) + 
+  plot_annotation(
+    title = "Comparative Functional Enrichment across Salmonella Infantis Sweeps",
+    subtitle = "Red points indicate significant genes (p_adj < 0.05, Log2OR > 1)",
+    caption = "Data source: Prokka + EggNOG-mapper + BLAST against 472 genomes"
+  )
 
-# 2. Prepare the matrix using all accessory genes
-mat_all <- pa_matrix %>% 
-  filter(Preferred_name %in% all_accessory_genes) %>% 
-  tibble::column_to_rownames("Preferred_name") %>%
-  as.matrix()
+# 5. Display and Save
+print(composite_volcano)
 
-# 3. Ensure the column (genome) order matches your annotation
-# We use the full sweep_labels here
-anno_df_all <- sweep_labels %>% 
-  filter(genome %in% colnames(mat_all)) %>% 
-  arrange(sweep)
+# Save as a large PDF for your thesis
+ggsave("Combined_Volcano_Plots.pdf", composite_volcano, width = 10, height = 14)
 
-mat_all <- mat_all[, anno_df_all$genome]
-
-# 4. Create the annotation with the full color palette
-sweep_colors <- c(
-  "sweep_1"  = "#E41A1C", "sweep_2"  = "#377EB8", 
-  "sweep_3"  = "#4DAF4A", "sweep_4"  = "#984EA3", 
-  "sweep_5"  = "#FF7F00", "sweep_6"  = "#FFFF33", 
-  "sweep_7"  = "#A65628", "no_sweep" = "#999999"
-)
-
-col_anno_all <- HeatmapAnnotation(
-  Sweep = anno_df_all$sweep, 
-  col = list(Sweep = sweep_colors)
-)
-
-# 5. Save the large Heatmap to PDF
-# Note: Increased height to 20 inches to give rows more room to breathe
-pdf("Sweeps_All_Genes_Heatmap.pdf", width = 12, height = 20)
-
-draw(Heatmap(mat_all, 
-             name = "Presence", 
-             col = c("0" = "white", "1" = "black"),
-             top_annotation = col_anno_all,
-             show_column_names = FALSE,  # Too many genomes (472) to show names
-             cluster_columns = FALSE, 
-             cluster_rows = TRUE,        # This will group genes with similar P/A patterns
-             show_row_names = FALSE,     # Hide names if there are >1000 genes to avoid overlap
-             row_title = paste(nrow(mat_all), "Accessory Genes"),
-             column_title = "Complete Accessory Pangenome Signatures in S. Infantis"))
-
-dev.off()

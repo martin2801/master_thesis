@@ -9,6 +9,7 @@ setwd("/home/senekowitsch/Thesis/Functional/05_analyze_BLAST")
 
 # load filtered data
 all_data_filtered <- fread("all_data_filtered.tsv.gz")
+n_distinct(all_data_filtered$sseqid) # 472 distinct target genomes with hits after filtering
 
 # load sweep labels to get sweep group sizes
 sweep_labels <- read.delim("/home/senekowitsch/Thesis/Functional/01_prokka/genome_sweep_labels.txt",
@@ -23,8 +24,9 @@ sweep_sizes <- sweep_labels %>%
   group_by(sweep) %>%
   summarise(n = n(), .groups = "drop")
 
+setwd("/home/senekowitsch/Thesis/Functional/06_BLAST_pident")
 # -------------------------------------------------
-# Classify each hit as inside or outside the sweep
+# Classify each gene hit as inside or outside the own sweep
 # -------------------------------------------------
 all_data_filtered <- all_data_filtered %>%
   mutate(hit_location = ifelse(target_sweep == query_group, "inside", "outside"))
@@ -32,11 +34,19 @@ all_data_filtered <- all_data_filtered %>%
 # -------------------------------------------------
 # Exclude unannotated genes
 # -------------------------------------------------
+#data_annotated <- all_data_filtered %>%
+#  filter(
+ #   !is.na(Preferred_name),
+  #  Preferred_name != "",
+   # Preferred_name != "-"
+  # )
+  
+head(data_annotated)
 data_annotated <- all_data_filtered %>%
   filter(
-    !is.na(Preferred_name),
-    Preferred_name != "",
-    Preferred_name != "-"
+    !is.na(COG_category),
+    COG_category != "",
+    COG_category != "-"
   )
 
 # -------------------------------------------------
@@ -133,7 +143,7 @@ cat("Dimensions:", nrow(pident_full), "rows x", ncol(pident_full), "cols\n")
 # -------------------------------------------------
 interesting <- pident_full %>%
   filter(
-    median_pident_inside == 100,
+    median_pident_inside >= 99.999,
     freq_inside >= 0.9,
     !is.na(median_pident_outside),
     median_pident_outside < 100
@@ -153,7 +163,7 @@ cat("Interesting cases written: pident_interesting.tsv\n")
 # -------------------------------------------------
 sweep_specific <- pident_full %>%
   filter(
-    median_pident_inside == 100,
+    median_pident_inside >= 99.999,
     freq_inside >= 0.9,
     is.na(median_pident_outside)
   )
@@ -265,7 +275,7 @@ plot_data <- interesting_cog %>%
 
 # plot
 p <- ggplot(plot_data, aes(x = location, y = median_pident, colour = Preferred_name)) +
-  geom_jitter(width = 0.15, size = 2, alpha = 0.8) +
+  geom_jitter(width = 0.15, height = 0, size = 2, alpha = 0.8) +
   facet_wrap(~ COG_split, scales = "free_y") +
   scale_y_continuous(limits = c(NA, 100)) +
   labs(
@@ -302,7 +312,7 @@ plot_data <- interesting_cog %>%
 
 # plot
 p <- ggplot(plot_data, aes(x = location, y = median_pident, colour = Preferred_name)) +
-  geom_jitter(width = 0.15, size = 2, alpha = 0.8) +
+  geom_jitter(width = 0.15, height = 0, size = 2, alpha = 0.8) +
   facet_wrap(~ COG_split, scales = "free_y") +
   scale_y_continuous(limits = c(NA, 100)) +
   labs(
@@ -339,7 +349,7 @@ plot_data <- interesting_cog %>%
 
 # plot
 p <- ggplot(plot_data, aes(x = location, y = median_pident, colour = Preferred_name)) +
-  geom_jitter(width = 0.15, size = 2, alpha = 0.8) +
+  geom_jitter(width = 0.15, height = 0, size = 2, alpha = 0.8) +
   facet_wrap(~ COG_split, scales = "free_y") +
   scale_y_continuous(limits = c(NA, 100)) +
   labs(
@@ -376,7 +386,7 @@ plot_data <- interesting_cog %>%
 
 # plot
 p <- ggplot(plot_data, aes(x = location, y = median_pident, colour = Preferred_name)) +
-  geom_jitter(width = 0.15, size = 2, alpha = 0.8) +
+  geom_jitter(width = 0.15, height = 0, size = 2, alpha = 0.8) +
   facet_wrap(~ COG_split, scales = "free_y") +
   scale_y_continuous(limits = c(NA, 100)) +
   labs(
@@ -413,7 +423,7 @@ plot_data <- interesting_cog %>%
 
 # plot
 p <- ggplot(plot_data, aes(x = location, y = median_pident, colour = Preferred_name)) +
-  geom_jitter(width = 0.15, size = 2, alpha = 0.8) +
+  geom_jitter(width = 0.15, height = 0, size = 2, alpha = 0.8) +
   facet_wrap(~ COG_split, scales = "free_y") +
   scale_y_continuous(limits = c(NA, 100)) +
   labs(
@@ -450,7 +460,7 @@ plot_data <- interesting_cog %>%
 
 # plot
 p <- ggplot(plot_data, aes(x = location, y = median_pident, colour = Preferred_name)) +
-  geom_jitter(width = 0.15, size = 2, alpha = 0.8) +
+  geom_jitter(width = 0.15, height = 0, size = 2, alpha = 0.8) +
   facet_wrap(~ COG_split, scales = "free_y") +
   scale_y_continuous(limits = c(NA, 100)) +
   labs(
@@ -487,7 +497,7 @@ plot_data <- interesting_cog %>%
 
 # plot
 p <- ggplot(plot_data, aes(x = location, y = median_pident, colour = Preferred_name)) +
-  geom_jitter(width = 0.15, size = 2, alpha = 0.8) +
+  geom_jitter(width = 0.15, height = 0, size = 2, alpha = 0.8) +
   facet_wrap(~ COG_split, scales = "free_y") +
   scale_y_continuous(limits = c(NA, 100)) +
   labs(
@@ -525,7 +535,7 @@ plot_data <- interesting_cog %>%
 
 # plot
 p <- ggplot(plot_data, aes(x = location, y = median_pident, colour = Preferred_name)) +
-  geom_jitter(width = 0.15, size = 2, alpha = 0.8) +
+  geom_jitter(width = 0.15, height = 0, size = 2, alpha = 0.8) +
   facet_wrap(~ COG_split, scales = "free_y") +
   scale_y_continuous(limits = c(NA, 100)) +
   labs(
@@ -590,3 +600,120 @@ pa %>% filter(n_sweeps == 7) %>% pull(Preferred_name)
 pa %>% filter(n_sweeps == 1, sweep_1 == 1) %>% pull(Preferred_name)
 
 
+
+library(ComplexHeatmap)
+library(circlize)
+
+# First, ensure you have the 'blast_results_with_sweeps' object ready
+# Then create the missing object:
+# Use your 'data_annotated' object to create the median table
+median_pident_per_group <- data_annotated %>%
+  # Filter for the genes you found interesting or your top genes list
+  filter(Preferred_name %in% all_genes_union) %>% 
+  group_by(Preferred_name, query_group) %>%
+  summarise(median_pident = median(pident, na.rm = TRUE), .groups = 'drop') %>%
+  rename(group = query_group) # Renaming to match the heatmap code from before
+
+# 1. Pivot the median data into a wide matrix format
+pident_mat <- median_pident_per_group %>%
+  dplyr::select(Preferred_name, group, median_pident) %>%
+  tidyr::pivot_wider(names_from = group, values_from = median_pident) %>%
+  tibble::column_to_rownames("Preferred_name") %>%
+  as.matrix()
+
+# 2. Handle NAs (genes absent in a sweep)
+# We set NAs to 0 or a low value so they don't break the clustering
+pident_mat[is.na(pident_mat)] <- 0
+
+# 3. Create a color gradient (e.g., 90% identity to 100%)
+# This ensures that small differences (like 95% vs 100%) are visible
+col_fun = colorRamp2(c(0, 90, 100), c("white", "yellow", "red"))
+
+# 4. Generate the Heatmap
+pdf("Pident_Similarity_Heatmap.pdf", width = 10, height = 12)
+
+Heatmap(pident_mat, 
+        name = "Median Pident", 
+        col = col_fun,
+        cluster_columns = TRUE, # Let R group sweeps with similar sequences
+        cluster_rows = TRUE, 
+        show_row_names = TRUE,
+        row_names_gp = gpar(fontsize = 7),
+        column_title = "Sequence Conservation (Pident) per Sweep",
+        heatmap_legend_param = list(title = "% Identity"))
+
+dev.off()
+
+
+
+
+# =================================================
+# Visualization: pident inside vs outside per COG
+# Replaces the per-sweep copy-paste blocks.
+# One function, looped over every query group.
+# Shared, fixed y-axis so all plots are comparable.
+# =================================================
+
+# Shared y-axis range, computed ONCE across all groups and both
+# locations, so every output PDF uses identical limits.
+y_min <- interesting_cog %>%
+  filter(!is.na(COG_split)) %>%
+  summarise(m = min(c(median_pident_inside, median_pident_outside),
+                    na.rm = TRUE)) %>%
+  pull(m)
+
+y_limits <- c(floor(y_min), 100)   # same on every plot
+
+plot_pident_by_cog <- function(group,
+                               data = interesting_cog,
+                               ylim = y_limits) {
+
+  pd <- data %>%
+    filter(query_group == group, !is.na(COG_split)) %>%
+    dplyr::select(Preferred_name, COG_split,
+                  median_pident_inside, median_pident_outside) %>%
+    pivot_longer(
+      cols      = c(median_pident_inside, median_pident_outside),
+      names_to  = "location",
+      values_to = "median_pident"
+    ) %>%
+    mutate(location = recode(location,
+      "median_pident_inside"  = "inside",
+      "median_pident_outside" = "outside"
+    ))
+
+  # some groups may have no interesting genes -> skip instead of erroring
+  if (nrow(pd) == 0) {
+    message("No interesting genes for ", group, " - skipping plot")
+    return(invisible(NULL))
+  }
+
+  p <- ggplot(pd, aes(x = location, y = median_pident,
+                      colour = Preferred_name)) +
+    geom_jitter(width = 0.15, height = 0, size = 2, alpha = 0.8) +
+    facet_wrap(~ COG_split) +                 # fixed scales -> facets comparable
+    scale_y_continuous(limits = ylim) +       # identical y-axis on every plot
+    labs(
+      title  = paste0("Median pident inside vs outside ", group,
+                      " per COG category"),
+      x      = NULL,
+      y      = "Median pident (%)",
+      colour = "Gene"
+    ) +
+    theme_bw() +
+    theme(
+      legend.position = "right",
+      strip.text      = element_text(face = "bold")
+    )
+
+  outfile <- paste0("pident_", group, "_cog.pdf")
+  ggsave(outfile, plot = p, width = 14, height = 10)
+  cat("Plot saved:", outfile, "\n")
+  invisible(p)
+}
+
+# Run for every query group
+groups <- c("sweep_1", "sweep_2", "sweep_3", "sweep_4",
+            "sweep_5", "sweep_6", "sweep_7", "no_sweep")
+
+for (g in groups) plot_pident_by_cog(g)

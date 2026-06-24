@@ -91,6 +91,13 @@ python3 snp_density_plot.py \
     -f "${cfml_bed}" \
     -o "${output_base}/snp_density.png"
 
+python3 snp_density_plot_pres.py \
+    -r "${input_core_alignment}" \
+    -c "${output_clonal_alignment}" \
+    -g "${gubbins_bed}" \
+    -f "${cfml_bed}" \
+    -o "${output_base}/snp_density_pres.png"
+
 # =============================================================================
 # TREE COMPARISON BEFORE AND AFTER RECOMBINATION REMOVAL
 # =============================================================================

@@ -164,6 +164,14 @@ python3 snp_density_plot.py \
     -f "${input_cfml}" \
     -o "${output_base}/snp_density.png"
 
+python3 snp_density_plot_pres.py \
+    -r "${full_alignment}" \
+    -c "${output_clonal_alignment}" \
+    -g "${input_bed}" \
+    -f "${input_cfml}" \
+    -o "${output_base}/snp_density_pres.png"
+
+
 # =============================================================================
 # REMOVE AMBIGUOUS SITES
 # =============================================================================
@@ -207,7 +215,7 @@ count=$(grep -v "^>" "${output_alignment_noambiguous}" | tr -d 'ATCGNatcgn-' | t
 echo "Unexpected characters in no-ambiguous alignment: ${count}"
 
 rm "${output_base}/core_alignment_masked.aln"
-rm "${output_base}/masked.aln"
+# rm "${output_base}/masked.aln"
 
 # =============================================================================
 # SPLIT ALIGNMENT INTO REFERENCE (117+ref) AND QUERY SEQUENCES

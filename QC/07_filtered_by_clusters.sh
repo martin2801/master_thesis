@@ -12,6 +12,7 @@ conda activate ani_heatmap
 python3 01_define_threshold.py
 #python3 02_filter_cluster_heatmap.py
 python3 02_filter_cluster_heatmap_ANI99.97.py
+python3 02_filter_cluster_heatmap_ANI99.97_pres.py
 python3 03_heatmap_filtered.py
 conda deactivate
 

@@ -50,3 +50,4 @@ checkm2 predict --threads 10 --input /home/senekowitsch/Thesis/QC/03_checkM/inpu
 
 conda activate ani_analysis
 python3 /home/senekowitsch/Thesis/QC/03_checkM/01_checkM_check_results.py
+python3 /home/senekowitsch/Thesis/QC/03_checkM/01_checkM_check_results_presi.py

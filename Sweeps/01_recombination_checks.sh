@@ -596,3 +596,9 @@ python3 ../recombination_plot.py \
     -o recombination_comparison.png \
     -l 4900000
 
+conda activate ani_heatmap
+python3 ../recombination_plot_pres.py \
+    -g gubbins_fixed.bed \
+    -f cfml_fixed.bed \
+    -o recombination_comparison_pres.png \
+    -l 5000000
