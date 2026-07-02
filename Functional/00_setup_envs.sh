@@ -57,6 +57,18 @@ else
     echo "pmlst environment already exists."
 fi
 
+# Create a new environment for hyphy if not exists
+if ! conda env list | grep -q "hyphy"; then
+    conda create -y -n hyphy
+    conda activate hyphy
+    conda install -c bioconda hyphy -y
+    conda install -c etetoolkit ete3 -y
+    conda install -c conda-forge parallel -y
+    hyphy --version
+else
+    echo "hyphy environment already exists."
+fi
+
 # Remove conda environments if needed
 conda deactivate
 conda env remove -n pmlst

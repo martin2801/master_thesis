@@ -241,7 +241,7 @@ colnames(no_sweep_11080585_merged)
 keep_cols <- c("sseqid", "qseqid", "pident", "length", "qlen", "slen", "qcovs", 
                "evalue.x", "bitscore", "COG_category", 
                "Preferred_name", "GOs", "KEGG_ko", "KEGG_Pathway", "CAZy",
-               "PFAMs", "sweep", "query_genome", "query_group")
+               "PFAMs", "sweep", "query_genome", "query_group", "Description")
 
 no_sweep_11080585_merged <- no_sweep_11080585_merged[, keep_cols]
 no_sweep_14738655_merged <- no_sweep_14738655_merged[, keep_cols]
@@ -329,7 +329,7 @@ table(all_data$query_group)
 # -------------------------------------------------
 # Safe data frame for easyer loading later
 # -------------------------------------------------
-fwrite(all_data, "all_data.tsv.gz", sep = "\t")
+fwrite(all_data, "all_data_2.tsv.gz", sep = "\t")
 
 # -------------------------------------------------
 # Filter: remove qseqid × query_genome combos that
@@ -363,12 +363,13 @@ cat("query_genome+qseqid combos removed:", length(dropped_qseqids), "\n")
 keep_cols <- c("sseqid", "qseqid", "pident",
                "COG_category", "Preferred_name", "GOs", 
                "KEGG_ko", "KEGG_Pathway", "CAZy", "PFAMs", 
-               "target_sweep", "query_genome", "query_group")
+               "target_sweep", "query_genome", "query_group",
+               "Description")
 
 all_data_filtered <- all_data_filtered[, keep_cols]
 
 # -------------------------------------------------
 # Safe data frame for easyer loading later
 # -------------------------------------------------
-fwrite(all_data_filtered, "all_data_filtered.tsv.gz", sep = "\t")
+fwrite(all_data_filtered, "all_data_filtered_2.tsv.gz", sep = "\t")
 object.size(all_data_filtered) |> format(units = "GB")

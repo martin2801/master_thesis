@@ -19,7 +19,7 @@ library(patchwork)
 setwd("/home/senekowitsch/Thesis/Functional/05_analyze_BLAST")
 
 # load the data
-all_data <- fread("/home/senekowitsch/Thesis/Functional/04_clean_BLAST/all_data.tsv.gz")
+all_data <- fread("/home/senekowitsch/Thesis/Functional/04_clean_BLAST/all_data_2.tsv.gz")
 head(all_data)
 # -------------------------------------------------
 # Filter: remove qseqid × query_genome combos that
@@ -341,6 +341,22 @@ cog_counts_complete <- cog_counts %>%
   mutate(sweep = coalesce(sweep.x, sweep.y)) %>%
   dplyr::select(-sweep.x, -sweep.y)
 
+# What is that one B gene in sweep_1?
+cog_counts_complete %>%
+  filter(COG_split == "B") %>%
+  filter(sweep == "sweep_1") %>%
+  summarise(total = sum(count))
+
+all_data_filtered %>%
+  filter(COG_category != "-", !is.na(COG_category)) %>%
+  mutate(COG_split = strsplit(COG_category, "")) %>%
+  tidyr::unnest(COG_split) %>%
+  distinct(sseqid, Preferred_name, Fun, COG_split) %>%
+  filter(COG_split == "B")
+
+
+head(all_data_filtered)
+
 # Wilcoxon test for each COG category x sweep group vs all others combined
 # = Mann Whitney U test, instead of t-test when we cant assume normality
 # valid here becasue non-negative integers, heavily right skewed
@@ -397,6 +413,7 @@ sig_cog %>%
 # group — the sweep group being tested
 # median_sweep — the median number of unique genes in that COG category per genome within the sweep group
 # median_other — the median number of unique genes in that COG category per genome outside the sweep group (all others combined)
+# perc_diff — percentage difference between median_sweep and median_other
 # direction — enriched means sweep genomes have more genes in that category than others; depleted means fewer
 # p_adjusted — Benjamini-Hochberg corrected p-value from the Wilcoxon test
 #   Controls false discovery rate. At p<0.05 we would expect at most 5% false positives
