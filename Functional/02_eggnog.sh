@@ -57,4 +57,4 @@ for faa in "${PROKKA_OUT}"/*/*/*.faa; do
     echo "Done: ${genome}"
 done
 
-echo "=== All done! ==="
+echo "=== All done! ==="‚

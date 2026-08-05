@@ -18,6 +18,7 @@ sweep_labels$genome <- as.character(sweep_labels$genome)
 
 # total number of genomes
 n_total <- nrow(sweep_labels)  # 472
+n_total
 
 # size of each sweep group (used as denominators for freq calculations)
 sweep_sizes <- sweep_labels %>%
@@ -34,24 +35,24 @@ all_data_filtered <- all_data_filtered %>%
 # -------------------------------------------------
 # Exclude unannotated genes
 # -------------------------------------------------
-#data_annotated <- all_data_filtered %>%
-#  filter(
- #   !is.na(Preferred_name),
-  #  Preferred_name != "",
-   # Preferred_name != "-"
-  # )
-  
-head(data_annotated)
 data_annotated <- all_data_filtered %>%
   filter(
     !is.na(COG_category),
     COG_category != "",
     COG_category != "-"
   )
+head(data_annotated)
 
 # -------------------------------------------------
 # Overall inside summary:
 # median pident + distinct genomes hit inside sweep
+# -------------------------------------------------
+# keeps only "inside" hits, groups by gene (Preferred_name) and the query's sweep (query_group)
+# for each gene/sweep combination computes the median/mean/sd of percent identity
+# n_genomes_hit_inside: the number of distinct target genomes that gene matched within its own sweep
+# then joins sweep_sizes to get n, the total genome count in that sweep, and divides to get 
+# fraction of genomes in the sweep that carry a hit for this gene.
+# So each row answers: "within sweep X, how identical and how prevalent is gene G?"
 # -------------------------------------------------
 inside_summary <- data_annotated %>%
   # keep only hits inside the sweep for this summary
@@ -59,7 +60,7 @@ inside_summary <- data_annotated %>%
   # group by gene annotation + query sweep group
   # so keep 1 chunk for gene1 in sweepA, 1 chunk for gene1 in sweepB, etc.
   group_by(Preferred_name, query_group) %>%
-  # collapse each chunk to one row contining:
+  # collapse each chunk to one row containing:
   summarise(
     median_pident_inside = median(pident),
     mean_pident_inside   = mean(pident),
@@ -70,13 +71,18 @@ inside_summary <- data_annotated %>%
   ) %>%
   # join sweep size (from outside summary) to compute freq_inside
   left_join(sweep_sizes, by = c("query_group" = "sweep")) %>%
-  # number of destinct genomes hit by genomes in this sweep group
+  # number of distinct genomes hit by genomes in this sweep group
   mutate(freq_inside = n_genomes_hit_inside / n) %>%
   dplyr::select(-n)
 
 # -------------------------------------------------
 # Overall outside summary:
 # median pident + distinct genomes hit outside sweep
+# -------------------------------------------------
+# for hits landing outside the query's own sweep, lumped together regardless of which other sweep they hit.
+# Same median/mean/sd/pident logic, same distinct-genome counting. 
+# since "outside" means "everywhere else." This gives one overall outside-identity number per gene/sweep
+# ignoring which specific sweep the outside hits came from.
 # -------------------------------------------------
 outside_summary <- data_annotated %>%
   filter(hit_location == "outside") %>%
@@ -97,6 +103,10 @@ outside_summary <- data_annotated %>%
 # -------------------------------------------------
 # Per-target-sweep outside breakdown:
 # median pident + freq hit for each outside sweep group
+# ------------------------------------------------
+#nthis is the more granular version of the outside summary
+# instead of collapsing all outside sweeps into one number, it groups by gene, query sweep
+# and target_sweep, so a gene from sweep_1 hitting sweep_2 is tracked separately from that same gene hitting sweep_3.
 # -------------------------------------------------
 per_sweep_outside <- data_annotated %>%
   filter(hit_location == "outside") %>%
@@ -258,7 +268,7 @@ print(sort(table(sweep_specific_cog$COG_split), decreasing = TRUE))
 # Visualization: pident inside vs outside per COG
 # -------------------------------------------------
 # for sweep_1
-# filter to sweep_7 and pivot to long format for plotting
+# filter to sweep_1 and pivot to long format for plotting
 # so each gene has two rows: one for inside, one for outside
 plot_data <- interesting_cog %>%
   filter(query_group == "sweep_1", !is.na(COG_split)) %>%
@@ -598,53 +608,6 @@ pa %>% filter(n_sweeps == 7) %>% pull(Preferred_name)
 
 # genes unique to sweep_7 only
 pa %>% filter(n_sweeps == 1, sweep_1 == 1) %>% pull(Preferred_name)
-
-
-
-library(ComplexHeatmap)
-library(circlize)
-
-# First, ensure you have the 'blast_results_with_sweeps' object ready
-# Then create the missing object:
-# Use your 'data_annotated' object to create the median table
-median_pident_per_group <- data_annotated %>%
-  # Filter for the genes you found interesting or your top genes list
-  filter(Preferred_name %in% all_genes_union) %>% 
-  group_by(Preferred_name, query_group) %>%
-  summarise(median_pident = median(pident, na.rm = TRUE), .groups = 'drop') %>%
-  rename(group = query_group) # Renaming to match the heatmap code from before
-
-# 1. Pivot the median data into a wide matrix format
-pident_mat <- median_pident_per_group %>%
-  dplyr::select(Preferred_name, group, median_pident) %>%
-  tidyr::pivot_wider(names_from = group, values_from = median_pident) %>%
-  tibble::column_to_rownames("Preferred_name") %>%
-  as.matrix()
-
-# 2. Handle NAs (genes absent in a sweep)
-# We set NAs to 0 or a low value so they don't break the clustering
-pident_mat[is.na(pident_mat)] <- 0
-
-# 3. Create a color gradient (e.g., 90% identity to 100%)
-# This ensures that small differences (like 95% vs 100%) are visible
-col_fun = colorRamp2(c(0, 90, 100), c("white", "yellow", "red"))
-
-# 4. Generate the Heatmap
-pdf("Pident_Similarity_Heatmap.pdf", width = 10, height = 12)
-
-Heatmap(pident_mat, 
-        name = "Median Pident", 
-        col = col_fun,
-        cluster_columns = TRUE, # Let R group sweeps with similar sequences
-        cluster_rows = TRUE, 
-        show_row_names = TRUE,
-        row_names_gp = gpar(fontsize = 7),
-        column_title = "Sequence Conservation (Pident) per Sweep",
-        heatmap_legend_param = list(title = "% Identity"))
-
-dev.off()
-
-
 
 
 # =================================================

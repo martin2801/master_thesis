@@ -15,52 +15,6 @@ SCRIPT="${base_dir}/check_5x_rule.py"
 
 threads=30
 
-# Define sweeps
-sweep1_genomes=(
-    "out_11452375"
-    "out_11452785"
-    "out_11453035"
-    "out_8046645"
-    "out_8091485"
-    "out_11452255"
-    "out_11452675"
-)
-sweep1_sister=("out_8790705")
-
-sweep2_genomes=(
-    "out_14966075"
-    "out_8963375"
-    "out_31832435"
-    "out_8067535"
-    "out_8476865"
-    "out_15254495"
-    "out_32036575"
-    "out_32037335"
-    "out_8070535"
-    "out_8514935"
-    "out_8777535"
-    "out_9027665"
-    "out_9523435"
-)
-sweep2_sister=("out_11452515")
-
-sweep3_genomes=(
-    "out_20671165"
-    "out_20671355"
-    "out_20671465"
-    "out_20671385"
-)
-sweep3_sister=("out_19267735")
-
-sweep4_genomes=(
-    "out_45809245"
-    "out_45808905"
-    "out_45808925"
-    "out_45808965"
-    "out_45808885"
-)
-sweep4_sister=("out_9523415")
-
 # Create output directories if they don't exist
 cd "${base_dir}"
 mkdir -p "${output_distances}"

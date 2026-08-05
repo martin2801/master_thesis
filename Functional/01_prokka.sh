@@ -12,4 +12,3 @@ mkdir -p "${output_base}"
 cd "${base_dir}"
 conda activate prokka
 python3 run_prokka.py
-

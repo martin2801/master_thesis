@@ -12,6 +12,9 @@ sweep_labels='/home/senekowitsch/Thesis/Functional/01_prokka/genome_sweep_labels
 PMLST_DB='/home/senekowitsch/miniconda3/envs/pmlst/share/pmlst/db'
 THREADS=30
 gene_count_cutoff=220
+# for tree visualization
+treefile="/home/senekowitsch/Thesis/Sweeps/04_place_on_tree/output/validate_sweeps/full_tree.treefile"
+SWEEPS="/home/senekowitsch/Thesis/Sweeps/05_check_distance/output/sweeps_bottomup_clonal_5x.txt"
 
 mkdir -p "${base_dir}"
 mkdir -p "${output_base}"
@@ -118,6 +121,24 @@ awk '
   > "${output_base}/sweep_labels_pESI.txt"
 
 cat "${output_base}/sweep_labels_pESI.txt"
+
+# Create a tree that highlights the genomes with pESI present
+pESI_present_file="${output_base}/sweep_labels_pESI.txt"
+
+awk -F'\t' '$NF=="YES" {print "out_" $1}' "${output_base}/sweep_labels_pESI.txt" \
+    > "${output_base}/pesi_genomes.txt"
+
+cd "${base_dir}"
+conda activate phylo_pipeline
+python3 plot_tree_pesi.py \
+    --tree "${treefile}" \
+    --sweeps "${SWEEPS}" \
+    --pesi "${output_base}/pesi_genomes.txt" \
+    --out "${output_base}/tree_pESI.png" \
+    --labels \
+    --dpi 400
+
+
 
 # ------------------------------------------
 # Identify other plasmids present in genomes
