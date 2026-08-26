@@ -56,8 +56,7 @@ with open(args.sweeps) as f:
 # prefix so they match the tree tip names directly (same as the file-based sweeps).
 SWEEP7_ID = 7
 SWEEP7_GENOMES = [
-    "out_11452375", "out_11452785", "out_11453035", "out_8046645", "out_8091485", "out_11452255",
-    "out_11452675", "out_45176625", "out_9318515", "out_31904705", "out_29413815", "out_27606475",
+    "out_45176625", "out_9318515", "out_31904705", "out_29413815", "out_27606475",
     "out_11168375", "out_11595885", "out_11588445", "out_32316375", "out_25671015", "out_28916195",
     "out_28916085", "out_31765335", "out_24242935", "out_24000255", "out_32498505", "out_32498225",
     "out_31895175", "out_14051005", "out_24910175", "out_8713855", "out_8813075", "out_22363375",

@@ -124,7 +124,8 @@ sort -k3,3nr $OUTPUT/fastANI_all_vs_enteritidis_reference_output.txt > $OUTPUT/f
 
 conda activate ani_analysis
 python3 01_ANI_compare_scores.py
-python3 01_ANI_comparre_scores_pres.py
+python3 01_ANI_compare_scores_pres.py
+python3 01_ANI_compare_scores_vector.py
 conda deactivate
 
 cd /home/senekowitsch/Thesis/QC

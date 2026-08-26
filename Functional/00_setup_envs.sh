@@ -69,6 +69,18 @@ else
     echo "hyphy environment already exists."
 fi
 
+# Create a new environment for bakta if not exists
+if ! conda env list | grep -q "bakta"; then
+    conda create -y -n bakta
+    conda activate bakta
+    conda install -c conda-forge -c bioconda bakta -y
+    bakta --version
+else
+    echo "bakta environment already exists."
+fi
+
+
+
 # Remove conda environments if needed
-conda deactivate
-conda env remove -n pmlst
+#conda deactivate
+#conda env remove -n pmlst

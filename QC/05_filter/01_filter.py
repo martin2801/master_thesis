@@ -74,9 +74,6 @@ filtered_ANI_df = ANI_df[ANI_df["ANI"] >= ANI_threshold]
 filtered_N50_df = N50_df[N50_df["N50"] >= N50_threshold]
 # print(filtered_N50_df)
 
-# get the list of samples that pass all filters
-#filtered_samples = set(filtered_checkm_df["Name"]).intersection(set(filtered_ANI_df["query"])).intersection(set(filtered_N50_df["Assembly"]))
-
 # Clean the ANI 'query' column: remove path AND remove '.fna'
 ani_basenames = filtered_ANI_df["query"].apply(lambda x: os.path.splitext(os.path.basename(x))[0])
 

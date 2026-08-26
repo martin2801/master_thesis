@@ -1,5 +1,4 @@
 #!/bin/bash
-set -euo pipefail
 source ~/miniconda3/etc/profile.d/conda.sh
 
 # Variables
@@ -11,7 +10,7 @@ abricate_summary_file="${output_base}/abricate_linecounts.txt"
 sweep_labels='/home/senekowitsch/Thesis/Functional/01_prokka/genome_sweep_labels.txt'
 PMLST_DB='/home/senekowitsch/miniconda3/envs/pmlst/share/pmlst/db'
 THREADS=30
-gene_count_cutoff=220
+gene_count_cutoff=100
 # for tree visualization
 treefile="/home/senekowitsch/Thesis/Sweeps/04_place_on_tree/output/validate_sweeps/full_tree.treefile"
 SWEEPS="/home/senekowitsch/Thesis/Sweeps/05_check_distance/output/sweeps_bottomup_clonal_5x.txt"
@@ -128,15 +127,81 @@ pESI_present_file="${output_base}/sweep_labels_pESI.txt"
 awk -F'\t' '$NF=="YES" {print "out_" $1}' "${output_base}/sweep_labels_pESI.txt" \
     > "${output_base}/pesi_genomes.txt"
 
+cat "${output_base}/pesi_genomes.txt"
+
 cd "${base_dir}"
 conda activate phylo_pipeline
 python3 plot_tree_pesi.py \
     --tree "${treefile}" \
     --sweeps "${SWEEPS}" \
     --pesi "${output_base}/pesi_genomes.txt" \
-    --out "${output_base}/tree_pESI.png" \
+    --out "${output_base}/tree_pESI_100.png" \
     --labels \
     --dpi 400
+
+python3 plot_tree_pesi.py \
+    --tree "${treefile}" \
+    --sweeps "${SWEEPS}" \
+    --pesi "${output_base}/pesi_genomes.txt" \
+    --out "${output_base}/tree_pESI.pdf" \
+    --labels \
+    --dpi 400
+
+# ------------------------------------------
+# Check the genes in the pESI plasmid
+# ------------------------------------------
+cd "${output_base}/mob_recon_outputs"
+
+plasmid1="/home/senekowitsch/Thesis/Functional/07_pESI/output/mob_recon_outputs/10133415_mob_recon_output/plasmid_AC358.fasta"
+plasmid2="/home/senekowitsch/Thesis/Functional/07_pESI/output/mob_recon_outputs/11163695_mob_recon_output/plasmid_AC358.fasta"
+plasmid3="/home/senekowitsch/Thesis/Functional/07_pESI/output/mob_recon_outputs/31059355_mob_recon_output/plasmid_AC358.fasta"
+plasmid4="/home/senekowitsch/Thesis/Functional/07_pESI/output/mob_recon_outputs/20081485_mob_recon_output/plasmid_AC358.fasta"
+plasmid5="/home/senekowitsch/Thesis/Functional/07_pESI/output/mob_recon_outputs/31904685_mob_recon_output/plasmid_AC358.fasta"
+
+ls "${plasmid1}" "${plasmid2}" "${plasmid3}" "${plasmid4}" "${plasmid5}"
+
+conda activate prokka
+mkdir -p "${output_base}/pESI_annotation"
+for plasmid in "${plasmid1}" "${plasmid2}" "${plasmid3}" "${plasmid4}" "${plasmid5}"; do
+    genome=$(basename $(dirname "${plasmid}") _mob_recon_output)
+    plasmid_id=$(basename "${plasmid}" .fasta)
+    echo "Running prokka for ${genome} ${plasmid_id}..."
+    prokka --outdir "${output_base}/pESI_annotation/${genome}_${plasmid_id}" \
+        --prefix "${genome}_${plasmid_id}" \
+        --genus Salmonella \
+        --species Infantis \
+        --kingdom Bacteria \
+        --cpus 30 \
+        --force \
+        "${plasmid}"
+done
+
+# Use bakta
+conda activate bakta
+bakta_db list
+#mkdir /data/Unit_LMM/selberherr-group/senekowitsch/db/bakta
+bakta_db download --output /data/Unit_LMM/selberherr-group/senekowitsch/db/bakta --type full
+
+for plasmid in "${plasmid1}" "${plasmid2}" "${plasmid3}" "${plasmid4}" "${plasmid5}"; do
+    genome=$(basename $(dirname "${plasmid}") _mob_recon_output)
+    plasmid_id=$(basename "${plasmid}" .fasta)
+    echo "Running bakta for ${genome} ${plasmid_id}..."
+    bakta --db /data/Unit_LMM/selberherr-group/senekowitsch/db/bakta/db \
+        --output "${output_base}/pESI_annotation_bakta/${genome}_${plasmid_id}_bakta" \
+        --prefix "${genome}_${plasmid_id}" \
+        --threads 30 \
+        --force \
+        "${plasmid}"
+done
+
+
+
+
+
+
+
+
+
 
 
 

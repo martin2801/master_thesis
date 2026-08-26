@@ -187,8 +187,13 @@ def draw_clade(clade, parent_x=None):
                     alpha=0.9,
                     zorder=7)
 
-for child in tree.root.clades:
-    draw_clade(child, node_x[id(tree.root)])
+# Draw from the root itself (parent_x=None so no branch is drawn into the root,
+# but the vertical connector joining the root's own children IS drawn here).
+# Previously this looped over tree.root.clades and called draw_clade(child, ...)
+# directly, which drew each child's branch but never the vertical line joining
+# them at the root -- that's what left the tree looking split into two pieces
+# on the left edge.
+draw_clade(tree.root)
 
 # --- Legend ---
 legend_patches = []
@@ -207,11 +212,20 @@ legend_patches.append(
     mpatches.Patch(color=SISTER_COLOR, label=f"Sister tip ({len(sister_tips)} genomes)")
 )
 
+# Place the legend entirely outside the plotted tree area (to the right of the
+# axes) rather than in a corner of the data area. With many sweeps the legend
+# box gets tall, and an in-plot "lower right" anchor can overlap dense clades
+# near the bottom of the tree (as happened here). Anchoring outside the axes
+# means it can never overlap tree content regardless of tree size or sweep
+# count; bbox_inches="tight" in savefig() below expands the saved canvas to
+# include it, so nothing gets clipped.
 leg = ax.legend(
     handles=legend_patches,
-    loc="lower right",
+    loc="upper left",
+    bbox_to_anchor=(1.01, 1.0),
+    borderaxespad=0.0,
     fontsize=6.5,
-    framealpha=0.7,
+    framealpha=0.9,
     facecolor="white",
     edgecolor="#888888",
     labelcolor="black",

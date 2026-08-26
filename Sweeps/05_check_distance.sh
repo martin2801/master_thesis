@@ -59,14 +59,57 @@ python3 plot_tree_with7.py --tree "${treefile}" --sweeps "${output_base}/sweeps_
 python3 detect_sweeps.py --tree "${treefile}" --snps "${SNP_LIST}" --threshold 5 --min-tips 3 --out "${output_base}/sweeps.txt"
 python3 plot_tree.py --tree "${treefile}" --sweeps "${output_base}/sweeps.txt" --out "${output_base}/tree_sweeps.png" --labels
 
-sweep5_genomes=(
-    "out_11452375"
+
+# Check distance individually for sweeps
+sweep1_genomes=(
+    "out_32036575"
+    "out_32037335"
+    "out_31832435"
+)
+sweep1_sister=("out_9523435")
+
+sweep2_genomes=(
+    "out_45808965"
+    "out_45808925"
+    "out_45808885"
+    "out_45808905"
+)
+sweep2_sister=("out_45809245")
+
+sweep3_genomes=(
     "out_11452785"
-    "out_11453035"
     "out_8046645"
+    "out_11453035"
     "out_8091485"
-    "out_11452255"
     "out_11452675"
+    "out_11452375"
+    "out_11452255"
+)
+sweep3_sister=("out_8790705")
+
+sweep4_genomes=(
+    "out_20671385"
+    "out_20671465"
+    "out_20671355"
+    "out_20671165"
+)
+sweep4_sister=("out_19267735")
+
+sweep5_genomes=(
+    "out_8927125"
+    "out_8928825"
+    "out_8026935"
+)
+sweep5_sister=("out_8894905")
+
+sweep6_genomes=(
+    "out_8637495"
+    "out_8484365"
+    "out_26733835"
+)
+sweep6_sister=("out_45808905")
+
+sweep7_genomes=(
     "out_45176625"
     "out_9318515"
     "out_31904705"
@@ -274,7 +317,17 @@ sweep5_genomes=(
     "out_11163695"
     "out_10133415"
 )
-sweep5_sister=("Reference")
+sweep7_sister=("Reference")
 
+
+
+python3 $SCRIPT --name "Sweep 1" --sister "$sweep1_sister" --snps "$SNP_LIST" --genomes "${sweep1_genomes[@]}"
+python3 $SCRIPT --name "Sweep 2" --sister "$sweep2_sister" --snps "$SNP_LIST" --genomes "${sweep2_genomes[@]}"
+python3 $SCRIPT --name "Sweep 3" --sister "$sweep3_sister" --snps "$SNP_LIST" --genomes "${sweep3_genomes[@]}"
+python3 $SCRIPT --name "Sweep 4" --sister "$sweep4_sister" --snps "$SNP_LIST" --genomes "${sweep4_genomes[@]}"
 python3 $SCRIPT --name "Sweep 5" --sister "$sweep5_sister" --snps "$SNP_LIST" --genomes "${sweep5_genomes[@]}"
+python3 $SCRIPT --name "Sweep 6" --sister "$sweep6_sister" --snps "$SNP_LIST" --genomes "${sweep6_genomes[@]}"
+python3 $SCRIPT --name "Sweep 7" --sister "$sweep7_sister" --snps "$SNP_LIST" --genomes "${sweep7_genomes[@]}"
+
+
 

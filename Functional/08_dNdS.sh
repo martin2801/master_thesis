@@ -169,6 +169,19 @@ for sweep in relax_inputs_concat/sweep_*/; do
     --output "relax_results_concat/${name}/concatenated_core.RELAX.json"
 done
 
+# Diagnose RELAX results
+cd "${base_dir}"
+conda activate phylo_pipeline
+python3 diagnose_relax_power.py --results-dir relax_results_concat --out power_diagnostics.csv
+
+python3 diagnose_relax_power.py --file relax_results_concat/sweep_1/concatenated_core.RELAX.json --out sweep_1_diag.csv
+python3 diagnose_relax_power.py --file relax_results_concat/sweep_2/concatenated_core.RELAX.json --out sweep_2_diag.csv
+python3 diagnose_relax_power.py --file relax_results_concat/sweep_3/concatenated_core.RELAX.json --out sweep_3_diag.csv
+python3 diagnose_relax_power.py --file relax_results_concat/sweep_4/concatenated_core.RELAX.json --out sweep_4_diag.csv
+python3 diagnose_relax_power.py --file relax_results_concat/sweep_5/concatenated_core.RELAX.json --out sweep_5_diag.csv
+python3 diagnose_relax_power.py --file relax_results_concat/sweep_6/concatenated_core.RELAX.json --out sweep_6_diag.csv
+python3 diagnose_relax_power.py --file relax_results_concat/sweep_7/concatenated_core.RELAX.json --out sweep_7_diag.csv
+
 # Parse results and FDR correction
 cd "${base_dir}"
 conda activate phylo_pipeline
