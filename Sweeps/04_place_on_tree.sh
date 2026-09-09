@@ -24,6 +24,7 @@ reference_genome='/home/senekowitsch/Thesis/QC/01_ANI/Genomes/Reference/infantis
 full_alignment="${output_full_alignment}/core.full.aln"
 REF='/home/senekowitsch/Thesis/QC/01_ANI/Genomes/Reference/infantis/GCF_000506925.1/ncbi_dataset/data/GCF_000506925.1/GCF_000506925.1_SI119944_genomic.fna'
 threads=40
+ $GENOMES/*.fna | wc -l
 
 # =============================================================================
 # PREPARATION
@@ -465,4 +466,3 @@ iqtree \
     -T "${threads}" \
     -B 1000 \
     --redo
-
