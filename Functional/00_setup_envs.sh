@@ -79,6 +79,15 @@ else
     echo "bakta environment already exists."
 fi
 
+# Create a new environment for panaroo if not exists
+if ! conda env list | grep -q "panaroo"; then
+    conda create -y -n panaroo
+    conda activate panaroo
+    conda install bioconda::panaroo -y
+    panaroo --version
+else
+    echo "panaroo environment already exists."
+fi
 
 
 # Remove conda environments if needed

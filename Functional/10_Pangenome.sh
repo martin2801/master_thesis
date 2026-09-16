@@ -4,8 +4,8 @@ source ~/miniconda3/etc/profile.d/conda.sh
 # Variables
 base_dir='/home/senekowitsch/Thesis/Functional/10_PanGenome'
 output_base="${base_dir}/output"
-output_bakta="${output_base}/bakta"
-output_panaro="${output_base}/panaroo"
+output_bakta="/data/Unit_LMM/selberherr-group/senekowitsch/Thesis/bakta_temp"
+output_panaro="/data/Unit_LMM/selberherr-group/senekowitsch/Thesis/panaroo_temp"
 
 GENOMES='/home/senekowitsch/Thesis/Sweeps/04_place_on_tree/genomes'
 sweep_labels='/home/senekowitsch/Thesis/Functional/01_prokka/genome_sweep_labels.txt'
@@ -52,6 +52,7 @@ find . -type f ! \( -name "*.log" -o -name "*.gff3" \) -delete
 panaroo -i "${output_bakta}"/*.gff3 \
         -o "${output_panaro}" \
         --clean-mode strict \
+        --remove-invalid-genes \
         -a core \
         -t ${THREADS}
 
