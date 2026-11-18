@@ -207,3 +207,12 @@ python3 /home/senekowitsch/Salmonella/AGES/Functional/plot_tree.py \
     --highlight "${partial_pesi_genomes}" "#1B7837" "partial pESI+" \
     --labels-all \
     --out "${output_base}"/infantis_pesi_tree_with_pesi.png
+
+# ------------------------------------------------------------------
+# Housekeeping: remove intermediate files (optional)
+# ------------------------------------------------------------------
+cd "${output_base}"
+rm -rf "${output_minimap2}"
+rm -rf "${output_platon}"
+rm -rf "${output_genomad}"
+rm -rf "${output_mob_recon}"

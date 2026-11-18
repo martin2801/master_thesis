@@ -67,6 +67,9 @@ snippy-core --prefix core_pesi --ref "/home/senekowitsch/Thesis/Functional_2/05_
 
 echo "Snippy complete. Core alignment: ${output_snippy}/core_pesi.full.aln"
 
+# housekeeping, remove intermediate snippy output directories to save space
+rm -rf "${output_snippy}"/*/  # Uncomment to delete per-sample directories
+
 # ------------------------------------------
 # Build trees from alignments using IQ-TREE
 # ------------------------------------------

@@ -18,7 +18,7 @@ output_pyseer="${output_base}/pyseer"
 # Inputs
 chromosomes="/home/senekowitsch/Thesis/Functional_2/01_plasmid_id/output/consensus/chromosomes"
 pesi_fastas="/home/senekowitsch/Thesis/Functional_2/01_plasmid_id/output/consensus/pESI"
-
+genome_summary="/home/senekowitsch/Thesis/Functional_2/01_plasmid_id/output/consensus/genome_summary.tsv"
 
 # for tree visualization
 infantis_tree="/home/senekowitsch/Thesis/Functional_2/01_plasmid_id/output/tree/full_tree_renamed.treefile"
@@ -50,7 +50,7 @@ for chrom in "${chromosomes}"/*.fasta; do
     bakta --db /data/Unit_LMM/selberherr-group/senekowitsch/db/bakta/db \
         --output "${output_bakta}/bakta_chromosome/${genome}" \
         --prefix "${genome}" \
-        --threads "${THREADS}" \
+        --threads 20 \
         --force \
         "${chrom}"
 done
@@ -76,7 +76,7 @@ for plasmid in "${pesi_fastas}"/*.fasta; do
     bakta --db /data/Unit_LMM/selberherr-group/senekowitsch/db/bakta/db \
         --output "${output_bakta}/bakta_pESI/${genome}" \
         --prefix "${genome}" \
-        --threads 30 \
+        --threads 20 \
         --force \
         "${plasmid}"
 done
@@ -86,24 +86,24 @@ done
 # Sanity checks
 # ------------------------------------------
 # how many genomes do you expect total (all infantis genomes, not just pESI+)?
-ls /home/senekowitsch/Salmonella/AGES/Sweep/00_Data/infantis/all_genomes/*.fna | wc -l
+ls /home/senekowitsch/Thesis/Functional_2/00_data/*.fna | wc -l
 
 # how many chromosome GFF3s actually got produced?
-find /home/senekowitsch/Salmonella/AGES/Functional/04_compare_clades/output/infantis/bakta_chromosome -name "*.gff3" | wc -l
+find /home/senekowitsch/Thesis/Functional_2/04_compare_clades/output/bakta/bakta_chromosome -name "*.gff3" | wc -l
 
 # which genomes are missing a GFF3 (failed or still running)?
 comm -23 \
-  <(ls /home/senekowitsch/Salmonella/AGES/Sweep/00_Data/infantis/all_genomes/*.fna | xargs -n1 basename | sed 's/\.fna$//' | sort) \
-  <(find /home/senekowitsch/Salmonella/AGES/Functional/04_compare_clades/output/infantis/bakta_chromosome -name "*.gff3" | xargs -n1 basename | sed 's/\.gff3$//' | sort)
+  <(ls /home/senekowitsch/Thesis/Functional_2/00_data/*.fna | xargs -n1 basename | sed 's/\.fna$//' | sort) \
+  <(find /home/senekowitsch/Thesis/Functional_2/04_compare_clades/output/bakta/bakta_chromosome -name "*.gff3" | xargs -n1 basename | sed 's/\.gff3$//' | sort)
 
 # ------------------------------------------
 # Run panaroo on the infantis chromosomes
 # ------------------------------------------
 conda activate panaroo
-cd "${output_infantis_panaroo}"
+cd "${output_panaroo}"
 mkdir temp
-panaroo -i /home/senekowitsch/Salmonella/AGES/Functional/04_compare_clades/output/infantis/bakta_chromosome/*/*.gff3 \
-    -o "${output_infantis_panaroo}" \
+panaroo -i /home/senekowitsch/Thesis/Functional_2/04_compare_clades/output/bakta/bakta_chromosome/*/*.gff3 \
+    -o "${output_panaroo}" \
     --clean-mode strict \
     -t "${THREADS}" \
     --remove-invalid-genes \
@@ -114,46 +114,32 @@ panaroo -i /home/senekowitsch/Salmonella/AGES/Functional/04_compare_clades/outpu
 # ------------------------------------------
 # Prepare pESI phenotype table for GWAS
 # ------------------------------------------
-cd "${output_infantis}"
+cd "${output_base}"
 
-LIST_pESI_ALL="/home/senekowitsch/Salmonella/AGES/Functional/01_pESI/output/infantis/abricate_pESI_genomes_infantis.txt"
-LIST_pESI_AGES="/home/senekowitsch/Salmonella/AGES/Functional/03_pESI_tree/output/infantis/clade_distances/AGES_tips_filtered.txt"
-LIST_pESI_NCBI="/home/senekowitsch/Salmonella/AGES/Functional/03_pESI_tree/output/infantis/clade_distances/sweep7_tips.txt"
+cat /home/senekowitsch/Thesis/Functional_2/01_plasmid_id/output/pESI_genomes_infantis_minimap2.txt > pesi_pos.tsv
+cat /home/senekowitsch/Thesis/Functional_2/01_plasmid_id/output/pESI_partial_genomes_infantis_minimap2.txt >> pesi_pos.tsv
 
-python3 /home/senekowitsch/Salmonella/AGES/Sweep/01_Sweeps/06_plot_tree_with7_AGES.py \
-    --tree "/home/senekowitsch/Salmonella/AGES/Sweep/01_Sweeps/output/infantis/tree/infantis_clean_tree_noambiguous.treefile" \
-    --sweeps "/home/senekowitsch/Salmonella/AGES/Sweep/01_Sweeps/output/infantis_sweeps_bottomup_clonal_5x.txt" \
-    --extra-list $LIST_pESI_ALL \
-    --extra-label "pESI_all" \
-    --extra-color "#00BCD4" \
-    --extra-overwrite \
-    --out "${output_base}/infantis_pESI_tree_all.pdf" \
-    --labels \
-    --dpi 400
+LIST_pESI_ALL="/home/senekowitsch/Thesis/Functional_2/04_compare_clades/output/pesi_pos.tsv"
 
-python3 /home/senekowitsch/Salmonella/AGES/Sweep/01_Sweeps/06_plot_tree_with7_AGES.py \
-    --tree "/home/senekowitsch/Salmonella/AGES/Sweep/01_Sweeps/output/infantis/tree/infantis_clean_tree_noambiguous.treefile" \
-    --sweeps "/home/senekowitsch/Salmonella/AGES/Sweep/01_Sweeps/output/infantis_sweeps_bottomup_clonal_5x.txt" \
-    --extra-list $LIST_pESI_AGES \
-    --extra-label "pESI_ages" \
-    --extra-color "#00BCD4" \
-    --extra-overwrite \
-    --out "${output_base}/infantis_pESI_tree_ages.pdf" \
-    --labels \
-    --dpi 400
+conda activate phylo_pipeline
+python3 /home/senekowitsch/Thesis/Functional_2/01_plasmid_id/plot_tree.py \
+    --tree "${infantis_tree}" \
+    --highlight "${sweeps_infantis}" "#00BCD4" "Sweep 7"\
+    --highlight "${LIST_pESI_ALL}" "#1B7837" "pESI+" \
+    --out "${output_base}/pESI_tree_all.pdf" \
+    --labels-all 
 
-python3 /home/senekowitsch/Salmonella/AGES/Sweep/01_Sweeps/06_plot_tree_with7_AGES.py \
-    --tree "/home/senekowitsch/Salmonella/AGES/Sweep/01_Sweeps/output/infantis/tree/infantis_clean_tree_noambiguous.treefile" \
-    --sweeps "/home/senekowitsch/Salmonella/AGES/Sweep/01_Sweeps/output/infantis_sweeps_bottomup_clonal_5x.txt" \
-    --extra-list $LIST_pESI_NCBI \
-    --extra-label "pESI_ncbi" \
-    --extra-color "#00BCD4" \
-    --extra-overwrite \
-    --out "${output_base}/infantis_pESI_tree_ncbi.pdf" \
-    --labels \
-    --dpi 400
 
-python3 make_pesi_phenotype.py
+conda activate phylo_pipeline
+cd "${output_base}"
+python3 "${base_dir}/make_pesi_phenotype_v2.py" \
+    --summary   "${genome_summary}" \
+    --bakta-dir "${output_bakta}/bakta_chromosome" \
+    --out       "${output_base}/pESI_phenotype.tsv" \
+    --pos-list  "${LIST_pESI_ALL}" \
+    --partial   pos \
+    | tee "${output_base}/pESI_phenotype.log"
+
 
 cd "${base_dir}"
 
@@ -161,30 +147,32 @@ if [ ! -f phylogeny_distance.py ]; then
     wget https://raw.githubusercontent.com/mgalardini/pyseer/master/scripts/phylogeny_distance.py
 fi
 
-python phylogeny_distance.py --lmm \
-    /home/senekowitsch/Salmonella/AGES/Sweep/01_Sweeps/output/infantis/tree/infantis_clean_tree_noambiguous.treefile \
-    > phylogeny_similarity.tsv
-
+python3 phylogeny_distance.py --lmm "${infantis_tree}" > phylogeny_similarity.tsv
 
 
 # ------------------------------------------
 # Run check_sample_overlap.py to check sample overlap between phenotype, gene presence/absence, and similarity matrix
 # -----------------------------------------
 cd "${base_dir}"
-python3 check_sample_overlap.py
+python3 "${base_dir}/check_sample_overlap.py" \
+    --phenotype  "${output_base}/pESI_phenotype.tsv" \
+    --rtab       "${output_panaroo}/gene_presence_absence.Rtab" \
+    --similarity "${base_dir}/phylogeny_similarity.tsv" \
+    --show 5
 
 # ------------------------------------------
 # Run pyseer for GWAS on chromosome and pESI presence/absence phenotype
 # ------------------------------------------
 conda activate pyseer
-cd "${output_infantis_pyseer}"
+cd "${output_pyseer}"
 pyseer --lmm \
-    --phenotypes /home/senekowitsch/Salmonella/AGES/Functional/04_compare_clades/output/infantis/pESI_phenotype.tsv \
-    --pres /home/senekowitsch/Salmonella/AGES/Functional/04_compare_clades/output/infantis/panaroo/gene_presence_absence.Rtab \
-    --similarity /home/senekowitsch/Salmonella/AGES/Functional/04_compare_clades/phylogeny_similarity.tsv \
+    --phenotypes /home/senekowitsch/Thesis/Functional_2/04_compare_clades/output/pESI_phenotype.tsv \
+    --pres /home/senekowitsch/Thesis/Functional_2/04_compare_clades/output/panaroo/gene_presence_absence.Rtab \
+    --similarity /home/senekowitsch/Thesis/Functional_2/04_compare_clades/phylogeny_similarity.tsv \
     --output-patterns patterns.txt \
     --cpu ${THREADS} \
     > pyseer_results.txt
+
 
 wc -l pyseer_results.txt
 sort -g -k4,4 pyseer_results.txt | head -20
@@ -194,11 +182,11 @@ sort -g -k4,4 pyseer_results.txt | head -20
 # ------------------------------------------
 conda activate phylo_pipeline
 
-cd "${output_infantis}"
+cd "${output_base}"
 python3 "${base_dir}/fisher_gene_test.py" \
-    --rtab      "${output_infantis_panaroo}/gene_presence_absence.Rtab" \
-    --phenotype "${output_infantis}/pESI_phenotype.tsv" \
-    --pyseer    "${output_infantis_pyseer}/pyseer_results.txt" \
+    --rtab      /home/senekowitsch/Thesis/Functional_2/04_compare_clades/output/panaroo/gene_presence_absence.Rtab \
+    --phenotype /home/senekowitsch/Thesis/Functional_2/04_compare_clades/output/pESI_phenotype.tsv \
+    --pyseer    "${output_pyseer}/pyseer_results.txt" \
     --out       fisher_results.tsv
 
 # ------------------------------------------
@@ -206,11 +194,27 @@ python3 "${base_dir}/fisher_gene_test.py" \
 # ------------------------------------------
 conda activate phylo_pipeline
 
-cd "${output_infantis}"
-python3 /home/senekowitsch/Salmonella/AGES/Functional/04_compare_clades/merge_annotations.py \
-    --results     /home/senekowitsch/Salmonella/AGES/Functional/04_compare_clades/output/infantis/fisher_results.tsv \
-    --panaroo-csv /home/senekowitsch/Salmonella/AGES/Functional/04_compare_clades/output/infantis/panaroo/gene_presence_absence.csv \
+cd "${output_base}"
+python3 "${base_dir}/merge_annotations.py" \
+    --results     fisher_results.tsv \
+    --panaroo-csv /home/senekowitsch/Thesis/Functional_2/04_compare_clades/output/panaroo/gene_presence_absence.csv \
     --out         fisher_results_annotated.tsv
+
+# ------------------------------------------
+# Create heatmap
+# ------------------------------------------
+conda activate phylo_pipeline
+cd "${base_dir}"
+
+python3 pangenome_heatmap.py \
+    --rtab      "${output_panaroo}/gene_presence_absence.Rtab" \
+    --results   "${output_base}/fisher_results_annotated.tsv" \
+    --tree      "${infantis_tree}" \
+    --midpoint \
+    --metadata  /home/senekowitsch/Thesis/Functional_2/02_AMR_finder/metadata.tsv \
+    --color-by  pESI pESI_detail group \
+    --top-n     500 \
+    --outdir    "${output_base}/pangenome_figs"
 
 
 # ------------------------------------------------------------------------------------------------------------------------------

@@ -181,3 +181,24 @@ if ! conda env list | grep -q "snippy_env"; then
 else
     echo "snippy_env environment already exists."
 fi
+
+# Create a new environment for phylo_time if not exists
+if ! conda env list | grep -q "phylo_pipeline"; then
+    conda create -n phylo_pipeline python=3.10 -y
+    conda activate phylo_pipeline
+    conda install -c bioconda -c conda-forge iqtree treetime -y
+    conda install -c conda-forge -c bioconda phylip -y
+    conda install -c conda-forge -c bioconda seqmagick -y
+    conda install -c conda-forge -c bioconda trimal -y
+    conda install -c conda-forge -c bioconda snp-sites -y
+    conda install -c conda-forge -c bioconda snp-dists -y
+    conda install -c conda-forge -c bioconda bedtools -y
+    conda install -c conda-forge -c bioconda scikit-learn -y
+    conda install bioconda::dendropy -y
+    # Verify installs
+    iqtree --version
+    treetime --version
+    trimal --version
+else
+    echo "phylo_time environment already exists."
+fi
